@@ -1,10 +1,10 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from backend.config import settings
-from backend.db.database import Base, engine
+from backend.db.database import Base, engine, init_db_on_demand
 from backend.db.seed_data import seed_database
 from backend.ml.predict import get_risk_model
 
@@ -28,33 +28,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register API Routers under /api
-app.include_router(auth.router, prefix=settings.API_V1_STR)
-app.include_router(projects.router, prefix=settings.API_V1_STR)
-app.include_router(sites.router, prefix=settings.API_V1_STR)
-app.include_router(analytics.router, prefix=settings.API_V1_STR)
-app.include_router(ai.router, prefix=settings.API_V1_STR)
-app.include_router(agent.router, prefix=settings.API_V1_STR)
-app.include_router(ml.router, prefix=settings.API_V1_STR)
-app.include_router(dashboard.router, prefix=settings.API_V1_STR)
+# Ensure Database Table & Data Initialization Middleware for Vercel Serverless
+@app.middleware("http")
+async def serverless_db_init_middleware(request: Request, call_next):
+    try:
+        init_db_on_demand()
+    except Exception as e:
+        print(f"Middleware DB init warning: {e}")
+    response = await call_next(request)
+    return response
+
+# Register API Routers under both /api and root / for Vercel path rewriting immunity
+routers = [auth.router, projects.router, sites.router, analytics.router, ai.router, agent.router, ml.router, dashboard.router]
+for r in routers:
+    app.include_router(r, prefix=settings.API_V1_STR)
+    app.include_router(r)
 
 @app.on_event("startup")
 def on_startup():
-    """Application startup initialization: Create tables, seed demo data, load ML artifact."""
     print("Starting up Darukaa.Earth FastAPI Application...")
-    Base.metadata.create_all(bind=engine)
     try:
-        seed_database()
+        init_db_on_demand()
     except Exception as e:
-        print(f"Seed database startup warning: {e}")
-
-    # Initialize PyTorch ML Model
-    try:
-        get_risk_model()
-    except Exception as e:
-        print(f"ML Model initialization warning: {e}")
+        print(f"Startup DB init warning: {e}")
 
 @app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {
         "status": "healthy",

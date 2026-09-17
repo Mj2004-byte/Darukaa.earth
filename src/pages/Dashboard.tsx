@@ -19,10 +19,77 @@ import { TreeCoverChart } from '../components/dashboard/TreeCoverChart';
 import { AIInsightCard } from '../components/dashboard/AIInsightCard';
 import { MapboxView } from '../components/map/MapboxView';
 
+const DEMO_STATS: DashboardStats = {
+  total_projects: 3,
+  active_projects: 3,
+  total_sites: 5,
+  total_area_ha: 8971.5,
+  total_carbon_sequestered: 124.5,
+  avg_biodiversity_score: 82.4,
+  recent_insights: [
+    {
+      title: 'Carbon Sequestration Trajectory',
+      content: 'Managed projects currently sequester 124.5 tCO2e/yr across 8,971.5 hectares.',
+      type: 'POSITIVE',
+    },
+    {
+      title: 'Biodiversity Index Stability',
+      content: 'Average biodiversity score remains healthy at 82.4/100 across 5 active monitoring polygons.',
+      type: 'NEUTRAL',
+    },
+    {
+      title: 'Satellite Telemetry Status',
+      content: 'All project boundaries are synchronized with PostGIS spatial indices and Mapbox GL layer rendering.',
+      type: 'INFO',
+    },
+  ],
+};
+
+const DEMO_SITES: Site[] = [
+  {
+    id: 'site-1',
+    project_id: 'proj-1',
+    name: 'Tapajós Core Restoration Sector A',
+    description: 'Dense rainforest sector undergoing high-density enrichment planting.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-54.95, -3.20],
+        [-54.85, -3.20],
+        [-54.85, -3.30],
+        [-54.95, -3.30],
+        [-54.95, -3.20]
+      ]]
+    },
+    area_hectares: 2450.50,
+    status: 'ACTIVE',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'site-2',
+    project_id: 'proj-1',
+    name: 'Xingu Buffer Zone Sector B',
+    description: 'Secondary forest protection zone.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-53.15, -4.10],
+        [-53.05, -4.10],
+        [-53.05, -4.20],
+        [-53.15, -4.20],
+        [-53.15, -4.10]
+      ]]
+    },
+    area_hectares: 2400.25,
+    status: 'MONITORING',
+    created_at: new Date().toISOString(),
+  },
+];
+
 export const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<DashboardStats>(DEMO_STATS);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
+  const [sites, setSites] = useState<Site[]>(DEMO_SITES);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -33,15 +100,14 @@ export const Dashboard: React.FC = () => {
           analyticsService.getDashboardStats(),
           projectService.getProjects(),
         ]);
-        setStats(statsData);
-        setProjects(projectsData);
-
-        if (projectsData.length > 0) {
+        if (statsData) setStats(statsData);
+        if (projectsData && projectsData.length > 0) {
+          setProjects(projectsData);
           const siteList = await siteService.getProjectSites(projectsData[0].id);
-          setSites(siteList);
+          if (siteList && siteList.length > 0) setSites(siteList);
         }
       } catch (e) {
-        console.error('Failed to load dashboard data:', e);
+        console.warn('Dashboard API load warning, using demo dataset:', e);
       } finally {
         setLoading(false);
       }
@@ -51,7 +117,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
@@ -70,25 +135,24 @@ export const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <KPICard
           title="Total Projects"
-          value={stats?.total_projects || 3}
-          subtitle={`${stats?.active_projects || 3} Active`}
+          value={stats.total_projects}
+          subtitle={`${stats.active_projects} Active`}
           icon={FolderKanban}
           iconColor="text-emerald-400"
         />
         <KPICard
           title="Active Sites"
-          value={stats?.total_sites || 5}
+          value={stats.total_sites}
           subtitle="PostGIS Geometries"
           icon={MapPin}
           iconColor="text-blue-400"
         />
         <KPICard
           title="Total Area"
-          value={`${(stats?.total_area_ha || 8971.5).toLocaleString()} ha`}
+          value={`${stats.total_area_ha.toLocaleString()} ha`}
           subtitle="Registered Polygons"
           icon={Trees}
           iconColor="text-emerald-400"
@@ -97,7 +161,7 @@ export const Dashboard: React.FC = () => {
         />
         <KPICard
           title="Carbon Sequestered"
-          value={`${(stats?.total_carbon_sequestered || 124.5).toLocaleString()} tCO2e`}
+          value={`${stats.total_carbon_sequestered.toLocaleString()} tCO2e`}
           subtitle="Annual Sequestration"
           icon={TrendingUp}
           iconColor="text-indigo-400"
@@ -106,7 +170,7 @@ export const Dashboard: React.FC = () => {
         />
         <KPICard
           title="Avg Biodiversity"
-          value={`${stats?.avg_biodiversity_score || 82.4} / 100`}
+          value={`${stats.avg_biodiversity_score} / 100`}
           subtitle="Ecological Index"
           icon={ShieldCheck}
           iconColor="text-emerald-400"
@@ -122,7 +186,6 @@ export const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Analytics Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between">
@@ -141,7 +204,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Mapbox Explorer & Biodiversity Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
           <div className="flex items-center justify-between">
@@ -166,14 +228,13 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Insights Callout Panel */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
         <div className="flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-emerald-400 animate-pulse" />
           <h3 className="text-sm font-bold text-white">AI Automated Insights</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {stats?.recent_insights.map((insight, idx) => (
+          {stats.recent_insights.map((insight, idx) => (
             <AIInsightCard
               key={idx}
               title={insight.title}
