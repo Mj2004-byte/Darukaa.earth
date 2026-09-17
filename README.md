@@ -14,11 +14,11 @@
 
 ## 🚀 Quick Vercel Deployment Guide
 
-Darukaa.Earth is **100% pre-configured for instant deployment to Vercel** using Vercel Serverless Python Functions (`@vercel/python`) and Static React Build (`@vercel/static-build`).
+Darukaa.Earth is pre-configured for instant deployment to Vercel using Vercel Serverless Python Functions (`@vercel/python`) and Static React Build (`@vercel/static-build`).
 
 ### Option A: One-Click Vercel CLI Deployment
 
-1. **Install Vercel CLI** (if not already installed):
+1. **Install Vercel CLI**:
    ```bash
    npm install -g vercel
    ```
@@ -40,22 +40,11 @@ Darukaa.Earth is **100% pre-configured for instant deployment to Vercel** using 
 1. Push your repository to **GitHub**.
 2. Log into **[Vercel Dashboard](https://vercel.com/dashboard)**.
 3. Click **"Add New Project"** $\rightarrow$ Select your `darukaa-earth` repository.
-4. **Build Settings** (Auto-detected from `vercel.json`):
+4. **Build Settings**:
    - **Framework Preset**: Vite
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-5. **Environment Variables**: Add the following in Vercel Project Settings:
-
-| Environment Variable | Recommended Vercel Value | Description |
-|---|---|---|
-| `JWT_SECRET_KEY` | `your-production-secret-key-2026` | Secret key for HS256 JWT tokens |
-| `GOOGLE_CLIENT_ID` | `your-client-id.apps.googleusercontent.com` | Google Cloud OAuth Client ID |
-| `GOOGLE_CLIENT_SECRET` | `your-google-client-secret` | Google Cloud OAuth Client Secret |
-| `VITE_MAPBOX_TOKEN` | `pk.eyJ1I...` | Mapbox GL JS Public Token |
-| `DATABASE_URL` | `sqlite:///./darukaa_dev.db` (or Supabase/Neon PostgreSQL) | Database connection URL |
-| `AI_DEMO_MODE` | `True` | Set `True` for grounded demo mode or `False` for live OpenAI API |
-| `LLM_PROVIDER` | `mock` or `openai` | AI LLM Provider choice |
-| `LLM_API_KEY` | `sk-...` | Optional OpenAI API Key |
+5. **Environment Variables**: Set environment variables securely in your Vercel Project Settings panel (`Settings -> Environment Variables`).
 
 ---
 
@@ -218,11 +207,10 @@ erDiagram
 
 ### Step-by-Step
 
-1. **Clone repository and setup environment**:
+1. **Clone repository**:
    ```bash
-   git clone https://github.com/your-org/darukaa-earth.git
+   git clone https://github.com/Mj2004-byte/Darukaa.earth.git
    cd daruka
-   cp .env.example .env
    ```
 
 2. **Backend Setup**:
@@ -253,7 +241,7 @@ erDiagram
 ## 🧪 Testing & Code Quality
 
 ```bash
-# Run backend pytest suite (8 passing unit & integration tests)
+# Run backend pytest suite
 python -m pytest
 
 # Run Python code formatting & linting
