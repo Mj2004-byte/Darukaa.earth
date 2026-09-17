@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
-    "prepare": "husky install"
+    "prepare": "test -d .git && husky || true"
   },
   "dependencies": {
     "@mapbox/mapbox-gl-draw": "^1.4.3",
