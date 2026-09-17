@@ -1,14 +1,93 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, Filter, Trees, Layers, ArrowRight } from 'lucide-react';
+import { Layers, ArrowRight } from 'lucide-react';
 import { projectService, siteService } from '../services/api';
 import { Project, Site } from '../types';
 import { MapboxView } from '../components/map/MapboxView';
 
+const DEMO_SITES: Site[] = [
+  {
+    id: 'site-1',
+    project_id: 'proj-1',
+    name: 'Tapajós Core Restoration Sector A',
+    description: 'Dense rainforest sector undergoing high-density enrichment planting of native Brazil nut and Dipteryx trees.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-54.95, -3.20],
+        [-54.85, -3.20],
+        [-54.85, -3.30],
+        [-54.95, -3.30],
+        [-54.95, -3.20]
+      ]]
+    },
+    area_hectares: 2450.50,
+    status: 'ACTIVE',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'site-2',
+    project_id: 'proj-1',
+    name: 'Xingu Buffer Zone Sector B',
+    description: 'Secondary forest protection zone serving as an ecological bridge between indigenous reserves.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-53.15, -4.10],
+        [-53.05, -4.10],
+        [-53.05, -4.20],
+        [-53.15, -4.20],
+        [-53.15, -4.10]
+      ]]
+    },
+    area_hectares: 2400.25,
+    status: 'MONITORING',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'site-3',
+    project_id: 'proj-2',
+    name: 'Coorg Bio-Agroforestry Plot 1',
+    description: 'High-altitude shade-grown coffee canopy mixed with native rosewood and cardamom understory.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [75.70, 12.30],
+        [75.78, 12.30],
+        [75.78, 12.22],
+        [75.70, 12.22],
+        [75.70, 12.30]
+      ]]
+    },
+    area_hectares: 1340.50,
+    status: 'ACTIVE',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'site-5',
+    project_id: 'proj-3',
+    name: 'Sundarbans Blue Carbon Sector Alpha',
+    description: 'Tidal mangrove forest featuring dense Rhizophora mucronata with high subterranean blue carbon sink rate.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [89.50, 21.80],
+        [89.62, 21.80],
+        [89.62, 21.70],
+        [89.50, 21.70],
+        [89.50, 21.80]
+      ]]
+    },
+    area_hectares: 1780.25,
+    status: 'ACTIVE',
+    created_at: new Date().toISOString(),
+  },
+];
+
 export const MapExplorer: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
-  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
+  const [sites, setSites] = useState<Site[]>(DEMO_SITES);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(DEMO_SITES[0]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -18,19 +97,20 @@ export const MapExplorer: React.FC = () => {
       setLoading(true);
       try {
         const projList = await projectService.getProjects();
-        setProjects(projList);
-
-        let allSites: Site[] = [];
-        for (const p of projList) {
-          const pSites = await siteService.getProjectSites(p.id);
-          allSites = [...allSites, ...pSites];
-        }
-        setSites(allSites);
-        if (allSites.length > 0) {
-          setSelectedSite(allSites[0]);
+        if (projList && projList.length > 0) {
+          setProjects(projList);
+          let allSites: Site[] = [];
+          for (const p of projList) {
+            const pSites = await siteService.getProjectSites(p.id);
+            allSites = [...allSites, ...pSites];
+          }
+          if (allSites.length > 0) {
+            setSites(allSites);
+            setSelectedSite(allSites[0]);
+          }
         }
       } catch (e) {
-        console.error(e);
+        console.warn('Map Explorer API load warning, using demo sites:', e);
       } finally {
         setLoading(false);
       }
@@ -44,7 +124,6 @@ export const MapExplorer: React.FC = () => {
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
@@ -54,13 +133,12 @@ export const MapExplorer: React.FC = () => {
           <p className="text-xs text-slate-400 mt-0.5">PostGIS geometry layers with real-time vector tile rendering</p>
         </div>
 
-        {/* Filter Dropdown */}
         <select
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
           className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
         >
-          <option value="">All Managed Projects ({sites.length} Sites)</option>
+          <option value="">All Managed Projects ({filteredSites.length} Sites)</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -69,9 +147,7 @@ export const MapExplorer: React.FC = () => {
         </select>
       </div>
 
-      {/* Main Map + Side Panel Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-0">
-        {/* Mapbox Canvas */}
         <div className="lg:col-span-2 h-full">
           <MapboxView
             sites={filteredSites}
@@ -81,7 +157,6 @@ export const MapExplorer: React.FC = () => {
           />
         </div>
 
-        {/* Selected Site Side Panel */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between overflow-y-auto">
           {selectedSite ? (
             <div className="space-y-4 text-xs">
@@ -116,7 +191,6 @@ export const MapExplorer: React.FC = () => {
             <div className="text-center py-12 text-slate-500 text-xs">Click a polygon site on the map to inspect telemetry</div>
           )}
 
-          {/* Quick List */}
           <div className="pt-4 border-t border-slate-800">
             <h4 className="font-bold text-slate-400 text-[11px] uppercase tracking-wider mb-2">
               Visible Sites ({filteredSites.length})

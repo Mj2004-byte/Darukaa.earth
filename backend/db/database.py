@@ -3,12 +3,14 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, declarative_base
 from backend.config import settings
 
+db_url = settings.effective_database_url
+
 connect_args = {}
-if settings.DATABASE_URL.startswith("sqlite"):
+if db_url.startswith("sqlite"):
     connect_args["check_same_thread"] = False
 
 engine = create_engine(
-    settings.DATABASE_URL,
+    db_url,
     connect_args=connect_args,
     echo=settings.DEBUG,
 )
@@ -22,13 +24,23 @@ def init_db_on_demand():
     global _db_initialized
     if not _db_initialized:
         try:
-            from backend.db.models import User
+            from backend.db.models import User, Project
             inspector = inspect(engine)
-            if not inspector.has_table("users"):
-                print("Creating database tables on demand...")
+            if not inspector.has_table("projects") or not inspector.has_table("users"):
+                print(f"Creating database tables on demand for {db_url}...")
                 Base.metadata.create_all(bind=engine)
                 from backend.db.seed_data import seed_database
                 seed_database()
+            else:
+                # Table exists, check if data is populated
+                db = SessionLocal()
+                try:
+                    if db.query(Project).count() == 0:
+                        print("Project table is empty, seeding demonstration dataset...")
+                        from backend.db.seed_data import seed_database
+                        seed_database()
+                finally:
+                    db.close()
             _db_initialized = True
         except Exception as e:
             print(f"On-demand DB init warning: {e}")

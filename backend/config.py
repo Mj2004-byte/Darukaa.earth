@@ -23,6 +23,13 @@ class Settings(BaseSettings):
 
     VITE_MAPBOX_TOKEN: str = "pk.eyJ1IjoiZGFydWthYSIsImEiOiJjbHNlYnZqMTAwMDAwMmlwOHp6Z3ZqZ3ZqIn0.demo_mapbox_token"
 
+    @property
+    def effective_database_url(self) -> str:
+        # Vercel serverless environment check: use /tmp for writable SQLite db
+        if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+            return "sqlite:////tmp/darukaa_dev.db"
+        return self.DATABASE_URL
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
