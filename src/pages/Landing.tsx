@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Globe2, Sparkles, Shield, Database, BrainCircuit, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -7,9 +7,11 @@ export const Landing: React.FC = () => {
   const { loginAsDemo, user } = useAuth();
   const navigate = useNavigate();
 
-  if (user) {
-    navigate('/dashboard');
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950 relative overflow-hidden">
