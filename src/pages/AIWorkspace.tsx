@@ -15,9 +15,69 @@ import { SiteComparison } from '../components/ai/SiteComparison';
 import { RiskPrediction } from '../components/ai/RiskPrediction';
 import { ReportGenerator } from '../components/ai/ReportGenerator';
 
+const DEMO_SITES: Site[] = [
+  {
+    id: 'site-1',
+    project_id: 'proj-1',
+    name: 'Tapajós Core Restoration Sector A',
+    description: 'Dense rainforest sector undergoing high-density enrichment planting.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-54.95, -3.20],
+        [-54.85, -3.20],
+        [-54.85, -3.30],
+        [-54.95, -3.30],
+        [-54.95, -3.20]
+      ]]
+    },
+    area_hectares: 2450.50,
+    status: 'ACTIVE',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'site-3',
+    project_id: 'proj-2',
+    name: 'Coorg Bio-Agroforestry Plot 1',
+    description: 'High-altitude shade-grown coffee canopy mixed with native rosewood.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [75.70, 12.30],
+        [75.78, 12.30],
+        [75.78, 12.22],
+        [75.70, 12.22],
+        [75.70, 12.30]
+      ]]
+    },
+    area_hectares: 1340.50,
+    status: 'ACTIVE',
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'site-5',
+    project_id: 'proj-3',
+    name: 'Sundarbans Blue Carbon Sector Alpha',
+    description: 'Tidal mangrove forest featuring dense Rhizophora mucronata.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [89.50, 21.80],
+        [89.62, 21.80],
+        [89.62, 21.70],
+        [89.50, 21.70],
+        [89.50, 21.80]
+      ]]
+    },
+    area_hectares: 1780.25,
+    status: 'ACTIVE',
+    created_at: new Date().toISOString(),
+  },
+];
+
 export const AIWorkspace: React.FC = () => {
-  const [sites, setSites] = useState<Site[]>([]);
-  const [selectedSiteId, setSelectedSiteId] = useState<string>('');
+  const [sites, setSites] = useState<Site[]>(DEMO_SITES);
+  const [selectedSiteId, setSelectedSiteId] = useState<string>(DEMO_SITES[0].id);
   const [activeTab, setActiveTab] = useState<'chat' | 'analysis' | 'compare' | 'risk' | 'report'>('chat');
   const [loading, setLoading] = useState(true);
 
@@ -25,17 +85,19 @@ export const AIWorkspace: React.FC = () => {
     const loadAllSites = async () => {
       try {
         const projects = await projectService.getProjects();
-        let all: Site[] = [];
-        for (const p of projects) {
-          const pSites = await siteService.getProjectSites(p.id);
-          all = [...all, ...pSites];
-        }
-        setSites(all);
-        if (all.length > 0) {
-          setSelectedSiteId(all[0].id);
+        if (projects && projects.length > 0) {
+          let all: Site[] = [];
+          for (const p of projects) {
+            const pSites = await siteService.getProjectSites(p.id);
+            all = [...all, ...pSites];
+          }
+          if (all.length > 0) {
+            setSites(all);
+            setSelectedSiteId(all[0].id);
+          }
         }
       } catch (e) {
-        console.error(e);
+        console.warn('AI Workspace API load warning, using demo sites:', e);
       } finally {
         setLoading(false);
       }
@@ -43,7 +105,7 @@ export const AIWorkspace: React.FC = () => {
     loadAllSites();
   }, []);
 
-  const selectedSite = sites.find((s) => s.id === selectedSiteId) || sites[0];
+  const selectedSite = sites.find((s) => s.id === selectedSiteId) || sites[0] || DEMO_SITES[0];
 
   const tabs = [
     { id: 'chat', label: 'Ask Darukaa AI', icon: Bot },
