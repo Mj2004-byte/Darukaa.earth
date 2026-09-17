@@ -1,0 +1,60 @@
+name: Darukaa.Earth CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-tests:
+    name: Backend Pytest & ML Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Ruff / Black Linting
+        run: |
+          ruff check backend/
+          black --check backend/
+
+      - name: Run Backend Pytest Suite
+        run: |
+          python -m pytest
+
+      - name: Run ML Offline Training & Inference Verification
+        run: |
+          python -m backend.ml.train
+          python -m backend.ml.predict
+
+  frontend-build:
+    name: Frontend Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Check TypeScript Types
+        run: npm run typecheck
+
+      - name: Build Production Frontend Assets
+        run: npm run build

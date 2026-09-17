@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build & Output
+dist/
+build/
+
+# Environment Variables & Secrets
+.env
+.env.local
+
+# Python Cache & Databases
+__pycache__/
+*.pyc
+*.db
+*.sqlite
+*.log
+.pytest_cache/
+.ruff_cache/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
